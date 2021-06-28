@@ -1,7 +1,9 @@
 package com.example.get_pick
 
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
@@ -32,6 +34,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val imageUriList: MutableList<Uri> = mutableListOf()
+    //가져온 이미지를 저장할 리스트 선언
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -60,6 +65,18 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun initStartPhotoFrameModeButton(){
+        startPhotoFrameModeButton.setOnClickListener {
+            val intent = Intent(this,PhotoFrameActivity::class.java)
+            imageUriList.forEachIndexed{index,uri -> //index 값을 하나씩 추출
+                intent.putExtra("photo$index", uri.toString())
+                //uri가 Str형으로 변환되고 메시지가 나타나면 다음 Act로 전환
+            }
+            intent.putExtra("photoListSize",imageUriList.size)
+            startActivity(intent)
         }
     }
 
@@ -107,7 +124,37 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(intent, 2000)
     }
 
-    private fun initStartPhotoFrameModeButton(){
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
 
+        if(resultCode != Activity.RESULT_OK) {
+            return
+        }
+
+        when(requestCode) {
+            2000 -> {
+                val selectedIamgeUri: Uri? = data?.data //데이터 값 null이면 null 반환
+
+                if(selectedIamgeUri != null) {
+
+                    if(imageUriList.size == 6) {
+                        Toast.makeText(this,"앨범 공간이 부족합니다.",Toast.LENGTH_SHORT).show()
+                        return
+                    } //앨범 잔여 공간 없을 시 예외 처리
+
+                    imageUriList.add(selectedIamgeUri)
+                    imageViewList[imageUriList.size - 1].setImageURI(selectedIamgeUri)
+                    //인덱스가 0번부터 시작하는 것을 고려하여 -1
+                    //이미지 파일이 실제로 목록에 추가
+                }else {
+                    Toast.makeText(this,"사진을 가져오지 못했습니다.",Toast.LENGTH_SHORT).show()
+                }
+            }
+            else -> {
+                Toast.makeText(this,"사진을 가져오지 못했습니다.",Toast.LENGTH_SHORT).show()
+            }
+        }
     }
+
+
 }
